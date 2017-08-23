@@ -9,7 +9,8 @@ const schema = new Schema({
     key: { type: String, required: true, trim: true, unique: false },
     value: {type: Schema.Types.Mixed, required: false},
     valueHash:  { type: String, required: true, trim: true, unique: false },
-    updated : {type: Date, required: true, default: moment.utc },
+    description: {type: Schema.Types.Mixed, required: false},
+    changed : {type: Date, required: true, default: moment.utc },
     lastCheck: {type: Date, required: true, default: moment.utc }
 });
 

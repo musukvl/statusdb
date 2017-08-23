@@ -44,7 +44,8 @@ describe('#status api text', () => {
                     {
                         namespace: "test",
                         key: "new-status",
-                        value: "1"
+                        value: "1",
+                        description: "some value"
                     }
                 ]
             })
@@ -73,7 +74,8 @@ describe('#status api text', () => {
                     {
                         namespace: "test",
                         key: "update-status",
-                        value: "1"
+                        value: "1",
+                        description: "some value"
                     }
                 ]
             })
@@ -92,7 +94,8 @@ describe('#status api text', () => {
                     {
                         namespace: "test",
                         key: "update-status",
-                        value: "2"
+                        value: "2",
+                        description: "some value"
                     }
                 ]
             })
@@ -112,10 +115,56 @@ describe('#status api text', () => {
     });
 
 
+    it('create multiple statuses', async () => {
+
+        let statuses = [];
+        let requestCount = 300;
+        for (let i = 0; i < requestCount; i++) {
+            statuses.push({
+                namespace: "test-multiple",
+                key: `many-status-${i}`,
+                value: i,
+                description: "some value " + i
+            });
+        }
+
+        await request(app)
+            .post('/api/status?api_key=TESTS_API_KEY')
+            .send({
+                status: statuses
+            })
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/);
+
+
+        statuses = statuses.map(x => {x.value = x.value + 1000; return x;});
+
+        await request(app)
+            .post('/api/status?api_key=TESTS_API_KEY')
+            .send({
+                status: statuses
+            })
+            .set('Accept', 'application/json')
+            .expect(200)
+            .expect('Content-Type', /json/);
+
+
+
+        let statusList = await Status.find({namespace: "test-multiple"});
+        statusList.length.should.be.equal(requestCount, "Status was not created");
+
+        let statusHistoryList = await StatusHistory.find({namespace: "test-multiple"});
+        statusHistoryList.length.should.be.equal(requestCount * 2, "Status History was not created");
+
+
+    });
+
+
+
+
     after(async () => {
         await mongoose.connection.close();
-        log.info('Db connection closed');
-
     });
 
 });

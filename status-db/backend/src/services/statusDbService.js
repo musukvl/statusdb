@@ -6,7 +6,6 @@ const moment = require('moment');
 class StatusDbService {
 
     constructor(){
-
     }
 
     /**
@@ -16,39 +15,58 @@ class StatusDbService {
      */
     async updateStatus(statusList) {
         //TODO: bulk update
+        let statusToUpdate = [];
+        let statusToInsert = [];
+        let historyToInsert = [];
         for (let status of statusList) {
             status.valueHash = status.valueHash ? status.valueHash : this.getValueHash(status.value);
 
             let existedStatus = await Status.findOne({namespace: status.namespace, key: status.key});
-            let statusChanged = !existedStatus || status.valueHash !== existedStatus.valueHash;
+            let createNewStatus = !existedStatus;
+            let statusChangedOrCreated = createNewStatus || status.valueHash !== existedStatus.valueHash;
+            status.date = status.date ? status.date : moment.utc();
 
-            // create new status
-            if (!existedStatus) {
+            if (createNewStatus) {
                 existedStatus = new Status({
                     namespace: status.namespace,
-                    key: status.key,
-                    value: status.value,
-                    valueHash: status.valueHash
+                    key: status.key
                 });
-            } else {
+            }
+            if (statusChangedOrCreated) {
                 existedStatus.value = status.value;
                 existedStatus.valueHash = status.valueHash;
-                existedStatus.updated = moment.utc();
-            }
+                existedStatus.description = status.description;
+                existedStatus.changed = status.date;
 
-            //create history record only if valueHash was changed
-            if (statusChanged) {
+                //create history record only if status was changed or created
                 let historyRecord = new StatusHistory({
                     namespace: existedStatus.namespace,
                     key: existedStatus.key,
                     value: existedStatus.value,
                     valueHash: existedStatus.valueHash,
-                    updated: existedStatus.updated
+                    description: existedStatus.description,
+                    changed: existedStatus.changed
                 });
-                await historyRecord.save();
+                historyToInsert.push(historyRecord);
             }
-            existedStatus.lastCheck = moment.utc();
-            await existedStatus.save();
+
+            existedStatus.lastCheck = status.date ? status.date : moment.utc();
+
+            if (createNewStatus) {
+                statusToInsert.push(existedStatus);
+            } else {
+                statusToUpdate.push(existedStatus);
+            }
+        }
+
+        if (historyToInsert.length) {
+            await StatusHistory.insertMany(historyToInsert);
+        }
+        if (statusToInsert) {
+            await Status.insertMany(statusToInsert);
+        }
+        if (statusToUpdate.length) {
+            await Promise.all(statusToUpdate.map((x) => x.save()));
         }
     }
 
