@@ -1,0 +1,4 @@
+.idea
+node_modules
+backend/log
+config.production.json

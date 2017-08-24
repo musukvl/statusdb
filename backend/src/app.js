@@ -23,5 +23,6 @@ async function main() {
     log.info("Application startup is done.");
 }
 
-main()
+module.exports = main()
     .catch(err => log.error(err));
+

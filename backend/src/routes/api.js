@@ -10,6 +10,10 @@ async function test(req, res) {
 
 async function updateStatus(req, res) {
     let statusList = req.body.status;
+    if (!statusList) {
+        res.status(400).end('Status not provided.');
+    }
+
     if (!(statusList instanceof Array)) {
         statusList = [statusList];
     }
