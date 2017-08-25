@@ -2,10 +2,16 @@ const Status = require('../model/Status');
 const StatusHistory = require('../model/StatusHistory');
 const hash = require('object-hash');
 const moment = require('moment');
+const queueBuilder = require('../config/queue');
+const config = require("../config/config");
 
 class StatusDbService {
 
     constructor(){
+        let queueName = config("status-update-queue");
+        if (queueName) {
+            this._updateQueue = queueBuilder(queueName);
+        }
     }
 
     /**
@@ -18,6 +24,7 @@ class StatusDbService {
         let statusToUpdate = [];
         let statusToInsert = [];
         let historyToInsert = [];
+        let statusUpdateQueueMessages = [];
         for (let status of statusList) {
             status.valueHash = status.valueHash ? status.valueHash : this.getValueHash(status.value);
 
@@ -39,17 +46,20 @@ class StatusDbService {
                 existedStatus.changed = status.date;
 
                 //create history record only if status was changed or created
-                let historyRecord = new StatusHistory({
+                let history = {
                     namespace: existedStatus.namespace,
                     key: existedStatus.key,
                     value: existedStatus.value,
                     valueHash: existedStatus.valueHash,
                     description: existedStatus.description,
                     changed: existedStatus.changed
-                });
+                };
+                let historyRecord = new StatusHistory(history);
                 historyToInsert.push(historyRecord);
+                if (this._updateQueue) {
+                    statusUpdateQueueMessages.push(history)
+                }
             }
-
             existedStatus.lastCheck = status.date ? status.date : moment.utc();
 
             if (createNewStatus) {
@@ -67,6 +77,10 @@ class StatusDbService {
         }
         if (statusToUpdate.length) {
             await Promise.all(statusToUpdate.map((x) => x.save()));
+        }
+
+        if (this._updateQueue && statusUpdateQueueMessages.length) {
+            await Promise.all(statusUpdateQueueMessages.map((x) => this._updateQueue.add(x)));
         }
     }
 

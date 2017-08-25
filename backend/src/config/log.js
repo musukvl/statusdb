@@ -3,10 +3,8 @@ const config = require('./config');
 const Logger = require('../logging/Logger');
 require('winston-daily-rotate-file');
 
-
 var internalLogger = createInternalLogger();
 var loggers = {};
-
 
 function createInternalLogger() {
     let logLevelsConfig = {
@@ -34,18 +32,14 @@ function createInternalLogger() {
     winston.addColors(logLevelsConfig.colors);
 
     winston.remove(winston.transports.Console);
-    winston.add(winston.transports.Console, {colorize: true, timestamp: true, level: 'silly'});
-    winston.add(winston.transports.File, { filename: 'log/debug.log', json: false, level:'info' });
 
     let logger = new (winston.Logger)({
         transports: [
-            new (winston.transports.Console)({ level: 'silly' }),
-            /*
-            new (winston.transports.File)({
-                filename: 'log/debug.log',
-                level: 'info'
-            })
-            */
+            new (winston.transports.Console)({
+                level: config('NODE_ENV') == "development" ? 'silly' : "warn",
+                colorize: true,
+                timestamp: true
+            }),
             new (winston.transports.DailyRotateFile)({
                 filename: './log/log',
                 datePattern: `yyyy-MM-dd.${config('NODE_ENV')}.`,

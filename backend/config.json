@@ -3,5 +3,6 @@
   "mongo-connection-string": "mongodb://localhost:27017/status-db",
   "upload-folder": "/u",
   "loggers": "all",
-  "log_level" : "debug"
+  "log_level" : "debug",
+  "status-update-queue": "status-update-queue"
 }
