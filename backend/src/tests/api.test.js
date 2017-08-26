@@ -66,6 +66,8 @@ describe('#status api text', () => {
 
     it('update status', async () => {
 
+
+
         await request(app)
             .post('/api/status')
             .send({

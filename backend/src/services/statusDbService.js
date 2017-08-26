@@ -2,16 +2,13 @@ const Status = require('../model/Status');
 const StatusHistory = require('../model/StatusHistory');
 const hash = require('object-hash');
 const moment = require('moment');
-const queueBuilder = require('../config/queue');
-const config = require("../config/config");
+
+const QueueService = require('./QueueService');
 
 class StatusDbService {
 
     constructor(){
-        let queueName = config("status-update-queue");
-        if (queueName) {
-            this._updateQueue = queueBuilder(queueName);
-        }
+        this._queueService = new QueueService();
     }
 
     /**
@@ -56,9 +53,7 @@ class StatusDbService {
                 };
                 let historyRecord = new StatusHistory(history);
                 historyToInsert.push(historyRecord);
-                if (this._updateQueue) {
-                    statusUpdateQueueMessages.push(history)
-                }
+                this._queueService.stashMessage(history);
             }
             existedStatus.lastCheck = status.date ? status.date : moment.utc();
 
@@ -78,10 +73,7 @@ class StatusDbService {
         if (statusToUpdate.length) {
             await Promise.all(statusToUpdate.map((x) => x.save()));
         }
-
-        if (this._updateQueue && statusUpdateQueueMessages.length) {
-            await Promise.all(statusUpdateQueueMessages.map((x) => this._updateQueue.add(x)));
-        }
+        await this._queueService.addStashedMessages();
     }
 
     getValueHash(value) {

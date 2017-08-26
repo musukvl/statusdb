@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const Client = require('../model/Client');
+const apiKeyChecker = require('../middleware/apiKeyChecker');
+const utils = require("../core/routeHelper");
 
-const statusDbService = require('../services/statusDbService');
+const statusDbService = require('../services/StatusDbService');
 
 async function test(req, res) {
     res.json({"text": "test"});
@@ -21,30 +23,9 @@ async function updateStatus(req, res) {
     res.json({"text": "test"});
 }
 
-router.use(async function (req, res, next) {
-    let apiKey = req.get('X-Api-Key');
-    if (!apiKey) {
-        apiKey = req.query["api_key"];
-    }
-    if (!apiKey) {
-        apiKey = req.body["api_key"];
-    }
-    if (!apiKey) {
-        res.status(400).end('API key required. Use api_key query parameter or X-Api-Key header.');
-        return;
-    }
-    let client = await Client.findOne({apiKey: apiKey});
-    if (!client) {
-        res.status(400).end('Wrong api key.');
-        return;
-    }
-    req.client = client;
-    req.apiKey = apiKey;
-
-    next();
-});
+router.use(apiKeyChecker);
 
 router.get("/test", test);
-router.post("/status", updateStatus);
+router.post("/status", utils.safe(updateStatus));
 
 module.exports = router;

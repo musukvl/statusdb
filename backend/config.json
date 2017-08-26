@@ -4,5 +4,6 @@
   "upload-folder": "/u",
   "loggers": "all",
   "log_level" : "debug",
-  "status-update-queue": "status-update-queue"
+  "status-update-queue": "status-update-queue",
+  "queue-cleanup-interval": 30000
 }

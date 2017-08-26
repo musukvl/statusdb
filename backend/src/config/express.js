@@ -1,6 +1,6 @@
 const express = require('express');
 //const favicon = require('serve-favicon');
-const logger = require('./log')("express");
+const log = require('./log')("express");
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const partials = require('express-partials');
@@ -8,6 +8,7 @@ const config = require('./config');
 
 const indexRouter = require('../routes/index');
 const apiRouter = require('../routes/api');
+const queueApiRouter = require("../routes/queueApi");
 
 async function init() {
     var app = express();
@@ -30,6 +31,8 @@ async function init() {
 
     app.use('/', indexRouter);
     app.use('/api', apiRouter);
+    app.use('/api', queueApiRouter);
+
 
     // catch 404 and forward to error handler
     app.use((req, res, next) => {
@@ -39,15 +42,17 @@ async function init() {
     });
 
     // error handler
+    // eslint-disable-next-line no-unused-vars
     app.use((err, req, res, next) => {
+        const status = err.status || 500
+        if (status === 500) {
+            log.error(err)
+            res.status(500).json(err)
+        } else {
+            res.status(status).json({ error: err.message })
+        }
+    })
 
-        res.locals.message = err.message;
-        res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-        // render the error page
-        res.status(err.status || 500);
-        res.render('error');
-    });
 
     return app;
 }

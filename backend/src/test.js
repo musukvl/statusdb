@@ -8,6 +8,13 @@ const database = require("./config/database");
 const mongoDbQueue = require('mongodb-queue');
 
 
+async function main(){
+    console.log("in main");
+}
+
+console.log(main());
+
+/*
 async function main() {
 
     log.info(`Configuration loaded for "${config("NODE_ENV")}" environment. App port is ${config("PORT")}`);
@@ -39,3 +46,4 @@ async function main() {
 
 main()
     .catch(err => log.error(err));
+*/

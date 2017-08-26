@@ -5,6 +5,7 @@ const config = require("./config/config");
 const database = require("./config/database");
 const express = require("./config/express");
 const server = require("./config/server");
+const queueCleander = require("./core/queueCleaner");
 
 
 async function main() {
@@ -19,6 +20,9 @@ async function main() {
 
     log.info("Run http server...");
     await server.init(app);
+
+    log.info("Queue cleaner started...");
+    await queueCleander.start();
 
     log.info("Application startup is done.");
 }
