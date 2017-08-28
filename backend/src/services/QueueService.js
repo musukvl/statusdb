@@ -30,7 +30,7 @@ class QueueService {
 
         if (!count || count === 1) {
             let message = await this._updateQueue.get();
-            return message;
+            return [message];
         }
 
         let result = [];
@@ -51,17 +51,17 @@ class QueueService {
     }
 
     async ack(messages) {
-        if (!this._updateQueue || !messages || !messages.length) {
+        if (!this._updateQueue || !messages) {
             return;
         }
 
         if (!(messages instanceof Array)) {
-            let ack = messages instanceof String ? msg : msg.ack;
-            await this._updateQueue.ack(ack);
+            let ack = typeof msg === "string" ? msg : msg.ack;
+            return await this._updateQueue.ack(ack);
         }
         else {
-            await Promise.all(messages.map(msg => {
-                let ack = msg instanceof String ? msg : msg.ack;
+            return await Promise.all(messages.map(msg => {
+                let ack = typeof msg === "string" ? msg : msg.ack;
                 return this._updateQueue.ack(ack);
             }));
         }

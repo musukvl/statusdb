@@ -11,6 +11,28 @@ class StatusDbService {
         this._queueService = new QueueService();
     }
 
+    async getNamespaceStatus(namespace) {
+        let status = await Status
+            .find({namespace: namespace})
+            .sort({key: 1})
+            .exec();
+        return status;
+    }
+
+    async getStatus(namespace, key) {
+        let status = await Status
+            .findOne({namespace: namespace, key: key})
+            .exec();
+        return status;
+    }
+
+    async getStatusHistory(namespace, key) {
+        let history = await StatusHistory.find({namespace: namespace, key: key})
+            .sort({changed: 1})
+            .exec();
+        return history;
+    }
+
     /**
      *
      * @param statuses : array

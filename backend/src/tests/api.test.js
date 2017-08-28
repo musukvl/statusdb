@@ -10,7 +10,7 @@ const express = require("../config/express");
 
 const Status = require('../model/Status');
 const StatusHistory = require('../model/StatusHistory');
-const Client = require('../model/Client');
+const testUtils = require('./testUtils');
 
 describe('#status api text', () => {
     var app = {};
@@ -26,38 +26,32 @@ describe('#status api text', () => {
         app = await express.init();
         log.info("Populate test data.");
 
-        var client = new Client({
-            apiKey: "TESTS_API_KEY",
-            namespaceRestrictions: ""
-        });
-        await client.save();
+        await testUtils.recreateTestDb();
 
         log.info("Before tests done");
     });
 
 
+    it('queue common usage flow', async () => {
+        await testUtils.recreateTestDb();
+
+        await testUtils.sendStatus(app, "queue-common-useage-1", 1);
+        await testUtils.sendStatus(app, "queue-common-useage-2", 2);
+        let messages = await testUtils.sendPost(app, '/api/queue/get', { count : 10 });
+        messages.length.should.be.equal(2, "Queue items were not created");
+
+        let ack = messages.map(x =>  x.ack);
+        await testUtils.sendPost(app, '/api/queue/ack', {ack: ack});
+    });
+
     it('create new status', async () => {
-        await request(app)
-            .post('/api/status?api_key=TESTS_API_KEY')
-            .send({
-                status: [
-                    {
-                        namespace: "test",
-                        key: "new-status",
-                        value: "1",
-                        description: "some value"
-                    }
-                ]
-            })
-            .set('Accept', 'application/json')
-            .expect(200)
-            .expect('Content-Type', /json/);
 
-        let statusList = await Status.find({namespace: "test", key: "new-status"});
-        statusList.length.should.be.equal(1, "Status was not created");
-        statusList[0].value.should.be.equal("1", "Status value was not updated");
+        await testUtils.sendStatus(app, "new-status", "1");
+        let createdStatus = await testUtils.sendPost(app, "/api/get-status", {namespace: "test", key: "new-status"});
+        should.exist(createdStatus, "Created status not found");
+        createdStatus.value.should.be.equal("1", "Status value was not updated");
 
-        let statusHistoryList = await StatusHistory.find({namespace: "test", key: "new-status"});
+        let statusHistoryList = await testUtils.sendPost(app, "/api/get-status-history", {namespace: "test", key: "new-status"});
         statusHistoryList.length.should.be.equal(1, "Status History was not created");
         statusHistoryList[0].value.should.be.equal("1", "Status History value was not updated");
 
@@ -66,54 +60,44 @@ describe('#status api text', () => {
 
     it('update status', async () => {
 
+        await testUtils.sendStatus(app, "update-status", "1");
+
+        let status = await testUtils.sendPost(app, "/api/get-status", {namespace: "test", key: "update-status"});
+        should.exist(status, "Created status not found");
+        status.value.should.be.equal("1", "Status value was not updated");
+
+        await testUtils.sendStatus(app, "update-status", "2");
+
+        status = await testUtils.sendPost(app, "/api/get-status", {namespace: "test", key: "update-status"});
+        should.exist(status, "Created status not found");
+        status.value.should.be.equal("2", "Status value was not updated");
 
 
-        await request(app)
-            .post('/api/status')
-            .send({
-                api_key: "TESTS_API_KEY",
-                status: [
-                    {
-                        namespace: "test",
-                        key: "update-status",
-                        value: "1",
-                        description: "some value"
-                    }
-                ]
-            })
-            .set('Accept', 'application/json')
-            .expect(200)
-            .expect('Content-Type', /json/);
-
-        let statusList = await Status.find({namespace: "test", key: "update-status"});
-        statusList.length.should.be.equal(1, "Status was not created");
-        statusList[0].value.should.be.equal("1", "Status value was not updated");
-
-        await request(app)
-            .post('/api/status')
-            .send({
-                status: [
-                    {
-                        namespace: "test",
-                        key: "update-status",
-                        value: "2",
-                        description: "some value"
-                    }
-                ]
-            })
-            .set('X-Api-Key', 'TESTS_API_KEY')
-            .set('Accept', 'application/json')
-            .expect(200)
-            .expect('Content-Type', /json/);
-
-
-        statusList = await Status.find({namespace: "test", key: "update-status"});
-        statusList.length.should.be.equal(1, "Status duplication");
-        statusList[0].value.should.be.equal("2", "Status value was not updated");
-
-
-        let statusHistoryList = await StatusHistory.find({namespace: "test", key: "update-status"});
+        let statusHistoryList = await testUtils.sendPost(app, "/api/get-status-history", {namespace: "test", key: "update-status"});
         statusHistoryList.length.should.be.equal(2, "Status History was not created");
+    });
+
+
+    it('namespace test', async () => {
+
+        await testUtils.sendPost(app, "/api/update-status", {
+                status: [
+                    {
+                        namespace: "namespace-test",
+                        key: `key1`,
+                        value: 1
+                    },
+                    {
+                        namespace: "namespace-test",
+                        key: `key2`,
+                        value: 1
+                    }
+                ]
+            }
+            );
+
+        let status = await testUtils.sendPost(app, "/api/get-namespace-status", {namespace: "namespace-test"});
+        status.length.should.be.equal(2, "Status value was not updated");
     });
 
 
@@ -130,28 +114,11 @@ describe('#status api text', () => {
             });
         }
 
-        await request(app)
-            .post('/api/status?api_key=TESTS_API_KEY')
-            .send({
-                status: statuses
-            })
-            .set('Accept', 'application/json')
-            .expect(200)
-            .expect('Content-Type', /json/);
-
+        await testUtils.sendPost(app, "/api/update-status", { status: statuses });
 
         statuses = statuses.map(x => {x.value = x.value + 1000; return x;});
 
-        await request(app)
-            .post('/api/status?api_key=TESTS_API_KEY')
-            .send({
-                status: statuses
-            })
-            .set('Accept', 'application/json')
-            .expect(200)
-            .expect('Content-Type', /json/);
-
-
+        await testUtils.sendPost(app, "/api/update-status", { status: statuses });
 
         let statusList = await Status.find({namespace: "test-multiple"});
         statusList.length.should.be.equal(requestCount, "Status was not created");
