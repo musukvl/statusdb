@@ -1,6 +1,5 @@
 const Client = require('../model/Client');
 
-
 async function apiKeyChecker (req, res, next) {
     let apiKey = req.get('X-Api-Key');
     if (!apiKey) {

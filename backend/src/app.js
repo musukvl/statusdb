@@ -7,7 +7,6 @@ const express = require("./config/express");
 const server = require("./config/server");
 const queueCleander = require("./core/queueCleaner");
 
-
 async function main() {
 
     log.info(`Configuration loaded for "${config("NODE_ENV")}" environment. App port is ${config("PORT")}`);
@@ -26,6 +25,10 @@ async function main() {
 
     log.info("Application startup is done.");
 }
+
+process.on('unhandledRejection', (reason, p) => {
+    console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+});
 
 module.exports = main()
     .catch(err => log.error(err));
