@@ -1,8 +1,8 @@
 const config = require("../config/config");
 const queueBuilder = require('../core/queueBuilder');
 
-
 class QueueService {
+
     constructor() {
         let queueName = config("status-update-queue");
         if (queueName) {
@@ -41,7 +41,7 @@ class QueueService {
         return result.filter(x => x);
     }
 
-    async stashMessage(message) {
+    stashMessage(message) {
         this._stash.push(message);
     }
 

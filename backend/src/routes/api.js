@@ -22,7 +22,7 @@ async function updateStatus(req, res) {
         statusList = [statusList];
     }
 
-    await statusDbService.updateStatus(statusList);
+    await statusDbService.updateStatuses(statusList);
     res.json({"result": "ok"});
 }
 
@@ -35,7 +35,7 @@ async function getStatus(req ,res) {
 
 async function getNamespaceStatus(req ,res) {
     let namespace = utils.getParam(req, "namespace");
-    let status = await statusDbService.getNamespaceStatus(namespace);
+    let status = await statusDbService.getNamespaceStatuses(namespace);
     res.json(status);
 }
 

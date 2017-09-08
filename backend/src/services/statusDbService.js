@@ -11,7 +11,12 @@ class StatusDbService {
         this._queueService = new QueueService();
     }
 
-    async getNamespaceStatus(namespace) {
+    /**
+     * Gets list of statuses belongs to namespace.
+     * @param {string} namespace
+     * @returns {Promise.<Status[]>} array of status items sorted by key.
+     */
+    async getNamespaceStatuses(namespace) {
         let status = await Status
             .find({namespace: namespace})
             .sort({key: 1})
@@ -19,6 +24,12 @@ class StatusDbService {
         return status;
     }
 
+    /**
+     * Gets status item by namespace and key
+     * @param namespace
+     * @param key
+     * @returns {Promise.<Status>}
+     */
     async getStatus(namespace, key) {
         let status = await Status
             .findOne({namespace: namespace, key: key})
@@ -26,6 +37,12 @@ class StatusDbService {
         return status;
     }
 
+    /**
+     * Returns status history items
+     * @param namespace
+     * @param key
+     * @returns {Promise.<StatusHistory[]>}
+     */
     async getStatusHistory(namespace, key) {
         let history = await StatusHistory.find({namespace: namespace, key: key})
             .sort({changed: 1})
@@ -34,18 +51,17 @@ class StatusDbService {
     }
 
     /**
-     *
-     * @param statuses : array
+     * Updates or creates statuses objects stored in database.
+     * Status history record will be created only if status value was changed.
+     * @param {Status[]} statuses
      * @returns {Promise.<void>}
      */
-    async updateStatus(statusList) {
-        //TODO: bulk update
+    async updateStatuses(statuses) {
         let statusToUpdate = [];
         let statusToInsert = [];
         let historyToInsert = [];
-        let statusUpdateQueueMessages = [];
-        for (let status of statusList) {
-            status.valueHash = status.valueHash ? status.valueHash : this.getValueHash(status.value);
+        for (let status of statuses) {
+            status.valueHash = status.valueHash ? status.valueHash : this._getValueHash(status.value);
 
             let existedStatus = await Status.findOne({namespace: status.namespace, key: status.key});
             let createNewStatus = !existedStatus;
@@ -98,7 +114,7 @@ class StatusDbService {
         await this._queueService.addStashedMessages();
     }
 
-    getValueHash(value) {
+    _getValueHash(value) {
         return hash(value);
     }
 }
