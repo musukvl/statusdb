@@ -8,6 +8,15 @@ const database = require("./config/database");
 const mongoDbQueue = require('mongodb-queue');
 
 
+let arr1 = ["1", "2", "3"];
+let arr2 = ["4", "5", "6"];
+let obj1 = {a:"a1", b: "b1"};
+let obj2 = {c:"c2", d: "d2"};
+
+console.log({...obj2, ...obj1});
+return;
+
+
 async function main(){
     console.log("in main");
 }

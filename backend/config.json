@@ -1,5 +1,5 @@
 {
-  "PORT" : 8080,
+  "PORT" : 8089,
   "mongo-connection-string": "mongodb://localhost:27017/status-db",
   "upload-folder": "/u",
   "loggers": "all",
