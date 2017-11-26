@@ -11,6 +11,11 @@ class StatusDbService {
         this._queueService = new QueueService();
     }
 
+    async getNamespaces() {
+        let namespaces = await Status.distinct("namespace").sort().exec();
+        return namespaces;
+    }
+
     /**
      * Gets list of statuses belongs to namespace.
      * @param {string} namespace

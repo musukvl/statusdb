@@ -46,12 +46,20 @@ async function getStatusHistory(req ,res) {
     res.json(status);
 }
 
+async function getNamespaces(req ,res) {
+    let namespaces = await statusDbService.getNamespaces();
+    res.json(namespaces);
+}
+
+
 router.use(apiKeyChecker);
 
 router.get("/test", test);
 router.post("/update-status", utils.safe(updateStatus));
 router.post("/get-status", utils.safe(getStatus));
+router.post("/get-namespaces", utils.safe(getNamespaces));
 router.post("/get-namespace-status", utils.safe(getNamespaceStatus));
 router.post("/get-status-history", utils.safe(getStatusHistory));
+
 
 module.exports = router;

@@ -6,14 +6,14 @@ class Server {
     constructor(app) {
         this._app = app;
 
-        let port = this.normalizePort(config('PORT'));
-        app.set('port', port);
+        this._port = this.normalizePort(config('PORT'));
+        app.set('port', this._port);
 
         this._server = http.createServer(app);
-        this._server.listen(port);
-        logger.info(`Listening port: ${port}`);
-        this._server.on('error', this.onError);
-        this._server.on('listening', this.onListening);
+        this._server.listen(this._port);
+        logger.info(`Listening port: ${this._port}`);
+        this._server.on('error', (error) => this.onError(error) );
+        this._server.on('listening', () => this.onListening());
     }
 
     /**
@@ -24,9 +24,9 @@ class Server {
             throw error;
         }
 
-        var bind = typeof port === 'string'
-            ? 'Pipe ' + port
-            : 'Port ' + port;
+        let bind = typeof this._port === 'string'
+            ? 'Pipe ' + this._port
+            : 'Port ' + this._port;
 
         // handle specific listen errors with friendly messages
         switch (error.code) {
@@ -55,7 +55,7 @@ class Server {
     }
 
     normalizePort(val) {
-        var port = parseInt(val, 10);
+        let port = parseInt(val, 10);
 
         if (isNaN(port)) {
             // named pipe
